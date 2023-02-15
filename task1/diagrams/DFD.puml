@@ -1,0 +1,102 @@
+@startuml
+
+node Railway {
+    [Semaphore] as Sem #red
+    [Rail switch] as Str #red
+
+    interface HTTPS as INT_RW #red
+    INT_RW -[#red]-> Sem
+    INT_RW -[#red]-> Str
+
+'    RWCI --> RWC
+}
+
+
+node Train {
+    [GPS] #red
+    [Odometer] #red
+    [Position aggregator] as POS #yellow
+
+    GPS -[#red]-> POS
+    Odometer -[#red]-> POS
+
+    [Telemetry] as TL #red
+
+    POS -[#green]-> TL
+
+
+    [Machinist\nassistance system] as MAS #red
+    interface HTTPS as MAS_I #red
+    MAS_I -[#red]-> MAS
+
+    [Train controllers] as T #lawngreen
+    actor Machinist as Mac #yellow
+
+    MAS -[#red]-> Mac
+    Sem -[#red]-> Mac
+
+    Mac -[#green]-> T
+}
+
+actor "Dispatcher" as DSP #lawngreen
+
+node Server {
+    database "Route DB" as DBR #lawngreen
+    database "Train DB" as DBT #lawngreen
+    
+    [Infrastructure\ncontroller] as CTRL #lawngreen
+    CTRL -[#red]-> INT_RW
+
+
+    interface HTTPS as INT_S_TELEM #red
+    TL -[#red]-> INT_S_TELEM
+
+    [Train position\npredictor] as TPP #red
+    INT_S_TELEM -[#red]-> TPP
+
+    [Train position\naggregator] as TPA #yellow
+    TPP -[#red]-> TPA
+    INT_S_TELEM -[#red]-> TPA
+
+    [Machinist assistance\nsystem server] as MASS #red
+    MASS -[#red]-> MAS_I
+
+    TPA -[#green]-> DBT
+
+    package "Dispatching" {
+        [Collision avoidance] as CA #red
+        DBT -[#green]-> CA
+'        TPA -[#green]-> CA
+        CA -[#red]-> MASS
+
+        [Position based rail switcher] as PRS #lawngreen
+        DBT -[#green]-> PRS
+        DBR -[#green]-> PRS
+        PRS -[#green]-> CTRL
+
+        [Route generator] as RC #lawngreen
+        DSP -[#green]-> RC
+        RC -[#green]-> DBR
+    }
+}
+
+node Assessment {
+    [Computer vision] as CV #red
+    [Railway camera] as Cam #red
+    Cam -[#red]-> CV
+    CV -[#red]-> TPA #red
+
+    actor "Rail Worker" as RW #yellow
+    CV -[#red]-> RW
+    RW -[#green]-> DBR
+}
+
+
+legend right
+    | Цвет | Тип |
+    |<#lawngreen> | Доверенный компонент |
+    |<#yellow> | Компонент повышающий целостность |
+    |<#red>| Недоверенный компонент |
+end legend
+
+@enduml
