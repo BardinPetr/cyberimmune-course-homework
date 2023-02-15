@@ -59,7 +59,7 @@
 
 ## Верхнеуровневые сценарии работы продукта
 
-![](/home/petr/Desktop/cyberimmune-course-homework/task1/diagrams/normal_scenario.png)
+![сценарии работы продукта](./diagrams/normal_scenario.png)
 
 
 ## Неприемлемые события или сценарии в отношении ценностей продукта
@@ -132,4 +132,4 @@
     1. получение информации о проблемах на подконтрольном участке
 
 ## Архитектура системы
-![](/home/petr/Desktop/cyberimmune-course-homework/task1/diagrams/DFD.png)
+![Архитектура системы](./diagrams/DFD.png)
