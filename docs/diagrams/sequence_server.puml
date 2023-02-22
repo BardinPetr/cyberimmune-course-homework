@@ -1,0 +1,46 @@
+@startuml
+!pragma teoz true
+'autonumber
+
+actor "Attacker" as Att #red
+actor "Dispatcher" as Dsp
+
+participant "Machinist assistance\nnotifier" as MAN
+participant "Collision\navoidance" as CAS
+participant "Route\ngenerator" as RG
+database "Routes DB" as DBR
+database "Map DB" as DBM
+participant "Rail switcher" as RSR
+participant "Train position\npredictor" as TPP
+participant "Train position\naggregator" as TPA
+participant "Train telemetry\nserver" as TTS
+database "Train DB" as DBT
+
+participant "Assessment\nrequester" as ASSR
+participant "Route editor" as ASSE
+actor "Rail worker" as Rai
+
+participant "Switch\ncontroller" as RSC
+participant "Rail switch" as RS
+participant "Signal\ncontroller" as SC
+participant "Semaphore" as SEM
+
+participant "Machinist assistance\nsystem" as MAS
+participant "Train telemetry" as TEL
+actor "Machinist" as Mac
+
+
+
+opt trains may crash
+Dsp -> CAS : new obstacle
+CAS -> SC : turn on stop light
+CAS -> RSC : change to required position
+end opt
+
+RSR -> RSC : set state
+RSC -> RS
+SC  -> SEM
+
+
+
+@enduml

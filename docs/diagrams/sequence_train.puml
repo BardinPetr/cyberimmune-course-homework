@@ -1,0 +1,79 @@
+@startuml
+!pragma teoz true
+'autonumber
+
+actor "Attacker" as Att #red
+actor "Dispatcher" as Dsp
+
+participant "Machinist assistance\nserver" as MAN
+participant "Train telemetry\nserver" as TTS
+
+participant "Semaphore" as SEM
+participant "Rail switch" as RS
+actor "Machinist" as Mac
+
+participant "Train" as TR
+
+database "Map DB" as DBM
+participant "GPS" as TPOS_G
+participant "Odometer" as TPOS_O
+participant "Position\naggregator" as TPOS
+participant "Infrastructure\nmap" as T_MAP
+participant "Emergency\nbrake system" as EBS
+participant "Brake\nController" as BRC
+participant "Machinist assistance\nsystem" as MAS
+participant "Semaphore checking\nsystem" as SCS
+participant "Train telemetry" as TEL
+
+
+
+participant "Assessment\nrequester" as ASSR
+
+loop always
+TPOS_G -> TPOS : raw position data
+TPOS_O -> TPOS
+TPOS   -> TEL  : validated and checked position
+TEL    -> TTS
+end loop
+
+loop avoid collisions when no data from server
+    MAS -> EBS : server is not responding for long time
+    EBS -> TPOS : get location
+    TPOS -> EBS
+    EBS -> DBM : get dangerous infrastructure nearby
+    DBM -> EBS : location to start braking
+    opt close to object (e.g. railway crossing)
+    else data from semaphores was invalid at least once or not available now
+        EBS -> BRC : start braking immediately
+    else semaphores available
+        EBS -> BRC : lower speed to minimal
+    end opt
+end loop
+
+opt emergency brake initiated from server
+    activate MAS
+        MAN -> MAS : stop requested at specified coordinates
+        MAS -> MAS : check request\nsignature
+        MAS -> EBS : requested position
+    deactivate MAS
+
+    loop until reached destination
+        EBS -> TPOS : get location
+        TPOS -> EBS
+    else when reached
+        EBS -> BRC : start braking immediately
+    end loop
+end opt
+
+opt got update from server
+    MAN -> MAS: next semaphores states
+    SCS -> MAS: current semaphore states
+    opt server data is trusted but semaphores states invalid
+        MAS -> ASSR: problem with semaphore detected
+        MAS -> Mac: do not trust semaphores
+    else OK
+        MAS -> Max: next semaphore state
+    end opt
+end opt
+
+@enduml

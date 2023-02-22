@@ -1,0 +1,131 @@
+@startuml
+
+node Railway {
+    [Semaphore] as Sem #red
+    [Rail switch] as Str #lawngreen
+
+    interface HTTPS as INT_RWM #red
+    INT_RWM -[#red]-> Sem
+
+    interface HTTPS as INT_RWW #lawngreen
+    INT_RWW -[#green]-> Str
+
+'    RWCI --> RWC
+}
+
+
+node Train {
+    [GPS] #red
+    [Odometer] #red
+    [Position aggregator] as POS #yellow
+
+    GPS -[#red]-> POS
+    Odometer -[#red]-> POS
+
+    [Telemetry] as TL #red
+
+    POS -[#green]-> TL
+
+    [Machinist\nassistance system] as MAS #yellow
+
+    database "Infrastructure\nmap" as IMAP #lawngreen
+
+    [MAS communication\n  service (HTTPS)] as MAS_I #red
+    MAS_I -[#red]-> MAS
+'    Sem -[#red]-> MAS
+
+    [Train controllers] as T #lawngreen
+    [Emergency brake system] as EBS #lawngreen
+    [Brake controller] as BC #lawngreen
+
+    POS -[#green]-> EBS
+    IMAP -[#green]-> EBS
+    EBS -[#green]-> BC
+'    BC -[#green]-> T
+
+    actor Machinist as Mac #yellow
+
+    MAS -[#green]-> Mac
+    MAS -[#green]-> BC
+    Sem -[#red]-> Mac
+
+    [Semaphore checking\nsystem] as SCS #red
+    Sem -[#red]-> SCS
+    SCS -[#red]-> MAS
+
+    Mac -[#green]-> T
+}
+
+actor "Dispatcher" as DSP #lawngreen
+
+node Server {
+    database "Map" as DBM #lawngreen
+    database "Train DB" as DBT #lawngreen
+    database "Route&Timetable DB" as DBR #lawngreen
+
+    [Switch\ncontroller] as CTRL #lawngreen
+    CTRL -[#green]-> INT_RWW
+
+    [Signal\ncontroller] as SIGCTRL #red
+    SIGCTRL -[#red]-> INT_RWM
+
+    [Telemetry server\n(HTTPS)] as INT_S_TELEM #red
+    TL -[#red]-> INT_S_TELEM
+
+    [Train position\npredictor] as TPP #red
+    INT_S_TELEM -[#red]-> TPP
+
+    [Train position\naggregator] as TPA #yellow
+    TPP -[#red]-> TPA
+    INT_S_TELEM -[#red]-> TPA
+
+    [Machinist assistance\nnotifier] as MASS #red
+    MASS -[#red]-> MAS_I
+
+    TPA -[#green]-> DBT
+
+    package "Dispatching" {
+        [Collision avoidance] as CA #lawngreen
+        DBT -[#green]-> CA
+        CA -[#green]--> MASS
+        CA -[#green]-> CTRL
+        CA -[#green]-> SIGCTRL
+
+        [Position based rail switcher] as PRS #lawngreen
+        TPA -[#green]-> PRS
+        DBM -[#green]-> PRS
+        PRS -[#green]-> CTRL
+        PRS -[#green]-> SIGCTRL
+
+        [Route generator] as RG #lawngreen
+        RG -[#green]-> DBR
+        DBR -[#green]-> PRS
+        DSP -[#green]-> RG
+        DBT -[#green]-> RG
+        DSP -[#green]-> CA
+    }
+
+    package Assessment {
+        actor "Rail Worker" as RW #lawngreen
+        [Assessment\nrequester] as ASR #yellow
+        interface HTTPS as ASSI #red
+        MAS -[#green]-> ASSI
+        ASSI -[#red]-> ASR
+        DBT -[#green]-> ASR
+        ASR -[#green]->RW
+
+        [Route editor] as RE #lawngreen
+        RW -[#green]-> RE
+        RE -[#green]-> DBM
+    }
+}
+
+
+legend right
+    | Цвет | Тип |
+    |<#lawngreen> | Доверенный компонент |
+    |<#yellow> | Компонент повышающий целостность |
+    |<#red>| Недоверенный компонент |
+end legend
+
+@enduml
